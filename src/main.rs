@@ -1,9 +1,7 @@
+mod components;
 mod fal_action;
 mod fal_app;
-mod fal_list_element;
 mod fal_message;
-
-mod components;
 
 use fal_app::*;
 

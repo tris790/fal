@@ -8,10 +8,10 @@ use fltk::{
 };
 use hotkey::{self, keys, modifiers};
 
+use crate::components::list_element_component::*;
 use crate::components::search_component::SearchComponent;
-use crate::fal_list_element::ListElement;
+use crate::fal_action::FalAction;
 use crate::fal_message::*;
-use crate::{fal_action::FalAction, fal_list_element::SelectedState};
 
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 500;
