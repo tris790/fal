@@ -9,7 +9,7 @@ impl FalAction {
     pub fn execute(&self) {
         match self {
             Self::LAUNCH(cmd) => {
-                let output = if cfg!(target_os = "windows") {
+                if cfg!(target_os = "windows") {
                     Command::new("cmd")
                         .args(&["/C", cmd])
                         .output()

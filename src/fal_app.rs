@@ -1,8 +1,6 @@
-use std::sync::Arc;
-
 use fltk::{
-    app::{self, event_key, event_key_down, Receiver},
-    enums::{Color, Event, Key, Shortcut},
+    app::{self, event_key_down, Receiver},
+    enums::{Color, Event, FrameType, Key},
     group::Pack,
     input::Input,
     prelude::*,
@@ -63,10 +61,10 @@ impl FalApp {
         window.set_color(Color::from_hex(0x9CA3AF));
         window.set_border(false);
 
-        let programs = get_programs();
         let mut search = Input::default()
             .with_pos(0, 0)
             .with_size(WINDOW_WIDTH, LIST_ITEM_HEIGHT);
+        search.set_frame(FrameType::FlatBox);
         search.set_text_size(30);
 
         let pack = Pack::new(
@@ -77,12 +75,20 @@ impl FalApp {
             "",
         );
 
+        let selected_index = 0;
         let mut elements: Vec<ListElement> = Vec::new();
+        let programs = get_programs();
         for (index, program) in programs.iter().enumerate() {
             elements.push(ListElement::new(
                 program.text.as_str(),
+                WINDOW_WIDTH,
+                LIST_ITEM_HEIGHT,
                 FalAction::LAUNCH(program.cmd.to_string()),
             ));
+
+            if index == selected_index {
+                elements[selected_index].set_selected_state(SelectedState::Selected);
+            }
         }
         pack.end();
 
@@ -99,15 +105,12 @@ impl FalApp {
             hotkey.listen();
         });
 
-        search.handle(move |a, ev| match ev {
+        search.handle(move |_, ev| match ev {
             Event::KeyDown => {
-                println!("key pressed");
                 if event_key_down(Key::Down) {
-                    println!("key down");
                     send_channel.send(FalMessage::KeybindPressed(Keybind::SelectionDown));
                     return true;
                 } else if event_key_down(Key::Up) {
-                    println!("key up");
                     send_channel.send(FalMessage::KeybindPressed(Keybind::SelectionUp));
                     return true;
                 } else if event_key_down(Key::Enter) {
@@ -132,22 +135,16 @@ impl FalApp {
 
     fn set_selected_element(&mut self, new_selected: usize) {
         let selected_element = self.elements.get_mut(self.selected_index).unwrap();
-        selected_element.set_selected(SelectedState::NotSelected);
+        selected_element.set_selected_state(SelectedState::NotSelected);
 
         if new_selected >= self.elements.len() {
-            println!("overflow");
             self.selected_index = 0;
         } else {
             self.selected_index = new_selected;
         }
 
-        println!(
-            "select {} size {}",
-            self.selected_index,
-            self.elements.len()
-        );
         let new_selected_element = self.elements.get_mut(self.selected_index).unwrap();
-        new_selected_element.set_selected(SelectedState::Selected);
+        new_selected_element.set_selected_state(SelectedState::Selected);
     }
 
     fn execute_selected_element(&mut self) {
@@ -165,17 +162,32 @@ impl FalApp {
         }
     }
 
+    fn fit_to_elements(&mut self) {
+        let new_window_height =
+            self.elements.len() as i32 * LIST_ITEM_HEIGHT + self.search.height();
+        let new_window_width = WINDOW_WIDTH;
+
+        let (screen_width, screen_height) = app::screen_size();
+
+        let center_x = (screen_width / 2 as f64) - (new_window_width as f64 / 2 as f64);
+        let center_y = (screen_height / 2 as f64) - (new_window_height as f64 / 2 as f64);
+
+        self.window.set_size(new_window_width, new_window_height);
+        self.window.set_pos(center_x as i32, center_y as i32);
+    }
+
     pub fn run(&mut self) {
         self.window.end();
         self.window.show();
-        // self.search.take_focus().ok();
-        // self.search.set_visible_focus();
+        self.search.take_focus().ok();
+        self.search.set_visible_focus();
+
+        self.fit_to_elements();
 
         while self.app.wait() {
             match self.recv_channel.recv() {
                 Some(FalMessage::KeybindPressed(keybind)) => match keybind {
                     Keybind::SelectionUp => {
-                        println!("recv up");
                         if self.selected_index == 0 {
                             self.set_selected_element(self.elements.len() - 1)
                         } else {
@@ -183,7 +195,6 @@ impl FalApp {
                         }
                     }
                     Keybind::SelectionDown => {
-                        println!("recv down");
                         self.set_selected_element(self.selected_index + 1);
                     }
                     Keybind::Execute => {
@@ -195,8 +206,7 @@ impl FalApp {
                         self.toggle_visibilty();
                     }
                 },
-                Some(msg) => println!("invalid keyboard hook msg: {:?}", msg),
-                _ => (),
+                None => (),
             }
         }
     }

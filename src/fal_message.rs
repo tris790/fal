@@ -1,5 +1,3 @@
-use fltk::enums::Key;
-
 #[derive(Debug)]
 pub enum Keybind {
     SelectionUp,
