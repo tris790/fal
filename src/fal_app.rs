@@ -8,6 +8,7 @@ use fltk::{
 };
 use hotkey::{self, keys, modifiers};
 
+use crate::components::search_component::SearchComponent;
 use crate::fal_list_element::ListElement;
 use crate::fal_message::*;
 use crate::{fal_action::FalAction, fal_list_element::SelectedState};
@@ -44,9 +45,9 @@ pub struct FalApp {
     window: Window,
     app: app::App,
     elements: Vec<ListElement>,
-    search: Input,
     recv_channel: Receiver<FalMessage>,
     selected_index: usize,
+    search_component: SearchComponent,
 }
 
 impl FalApp {
@@ -61,11 +62,7 @@ impl FalApp {
         window.set_color(Color::from_hex(0x9CA3AF));
         window.set_border(false);
 
-        let mut search = Input::default()
-            .with_pos(0, 0)
-            .with_size(WINDOW_WIDTH, LIST_ITEM_HEIGHT);
-        search.set_frame(FrameType::FlatBox);
-        search.set_text_size(30);
+        let search_component = SearchComponent::new(WINDOW_WIDTH, LIST_ITEM_HEIGHT, send_channel);
 
         let pack = Pack::new(
             0,
@@ -105,31 +102,13 @@ impl FalApp {
             hotkey.listen();
         });
 
-        search.handle(move |_, ev| match ev {
-            Event::KeyDown => {
-                if event_key_down(Key::Down) {
-                    send_channel.send(FalMessage::KeybindPressed(Keybind::SelectionDown));
-                    return true;
-                } else if event_key_down(Key::Up) {
-                    send_channel.send(FalMessage::KeybindPressed(Keybind::SelectionUp));
-                    return true;
-                } else if event_key_down(Key::Enter) {
-                    send_channel.send(FalMessage::KeybindPressed(Keybind::Execute));
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-            _ => false,
-        });
-
         FalApp {
             window,
             app,
             elements,
-            search,
             recv_channel,
             selected_index: 0,
+            search_component,
         }
     }
 
@@ -164,7 +143,7 @@ impl FalApp {
 
     fn fit_to_elements(&mut self) {
         let new_window_height =
-            self.elements.len() as i32 * LIST_ITEM_HEIGHT + self.search.height();
+            self.elements.len() as i32 * LIST_ITEM_HEIGHT + self.search_component.height();
         let new_window_width = WINDOW_WIDTH;
 
         let (screen_width, screen_height) = app::screen_size();
@@ -179,8 +158,8 @@ impl FalApp {
     pub fn run(&mut self) {
         self.window.end();
         self.window.show();
-        self.search.take_focus().ok();
-        self.search.set_visible_focus();
+
+        self.search_component.focus();
 
         self.fit_to_elements();
 
