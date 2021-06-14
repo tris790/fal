@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use fltk::{
     app::{self, event_key, event_key_down, Receiver},
     enums::{Color, Event, Key, Shortcut},
@@ -45,18 +47,15 @@ pub struct FalApp {
     app: app::App,
     elements: Vec<ListElement>,
     search: Input,
-    keyboard_hook_recv_channel: Receiver<FalMessageKeyboardHookThread>,
-    main_thread_recv_channel: Receiver<FalMessageMainThread>,
+    recv_channel: Receiver<FalMessage>,
     selected_index: usize,
 }
 
 impl FalApp {
     pub fn new() -> FalApp {
         let app = app::App::default();
-        let (keyboard_hook_send_channel, keyboard_hook_recv_channel) =
-            app::channel::<FalMessageKeyboardHookThread>();
-        let (main_thread_send_channel, main_thread_recv_channel) =
-            app::channel::<FalMessageMainThread>();
+        let (send_channel, recv_channel) = app::channel::<FalMessage>();
+        let (send_channel_thread, _) = app::channel::<FalMessage>();
 
         let mut window = Window::default()
             .with_size(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -92,11 +91,9 @@ impl FalApp {
             hotkey
                 .register_hotkey(modifiers::CONTROL, keys::SPACEBAR, move || {
                     println!("global hotkey");
-                    keyboard_hook_send_channel.send(
-                        FalMessageKeyboardHookThread::GlobalHotkeyTriggered(
-                            KeyboardHookKeybind::OpenToggleFalVisibilty,
-                        ),
-                    );
+                    send_channel_thread.send(FalMessage::GlobalHotkeyTriggered(
+                        KeyboardHookKeybind::OpenToggleFalVisibilty,
+                    ));
                 })
                 .unwrap();
             hotkey.listen();
@@ -107,17 +104,14 @@ impl FalApp {
                 println!("key pressed");
                 if event_key_down(Key::Down) {
                     println!("key down");
-                    main_thread_send_channel
-                        .send(FalMessageMainThread::KeybindPressed(Keybind::SelectionDown));
+                    send_channel.send(FalMessage::KeybindPressed(Keybind::SelectionDown));
                     return true;
                 } else if event_key_down(Key::Up) {
                     println!("key up");
-                    main_thread_send_channel
-                        .send(FalMessageMainThread::KeybindPressed(Keybind::SelectionUp));
+                    send_channel.send(FalMessage::KeybindPressed(Keybind::SelectionUp));
                     return true;
                 } else if event_key_down(Key::Enter) {
-                    main_thread_send_channel
-                        .send(FalMessageMainThread::KeybindPressed(Keybind::Execute));
+                    send_channel.send(FalMessage::KeybindPressed(Keybind::Execute));
                     return true;
                 } else {
                     return false;
@@ -131,8 +125,7 @@ impl FalApp {
             app,
             elements,
             search,
-            keyboard_hook_recv_channel,
-            main_thread_recv_channel,
+            recv_channel,
             selected_index: 0,
         }
     }
@@ -179,8 +172,8 @@ impl FalApp {
         // self.search.set_visible_focus();
 
         while self.app.wait() {
-            match self.main_thread_recv_channel.recv() {
-                Some(FalMessageMainThread::KeybindPressed(keybind)) => match keybind {
+            match self.recv_channel.recv() {
+                Some(FalMessage::KeybindPressed(keybind)) => match keybind {
                     Keybind::SelectionUp => {
                         println!("recv up");
                         if self.selected_index == 0 {
@@ -197,13 +190,10 @@ impl FalApp {
                         self.execute_selected_element();
                     }
                 },
-                Some(msg) => println!("invalid keyboard hook msg: {:?}", msg),
-                _ => (),
-            }
-            match self.keyboard_hook_recv_channel.recv() {
-                Some(FalMessageKeyboardHookThread::GlobalHotkeyTriggered(keybind)) => match keybind
-                {
-                    KeyboardHookKeybind::OpenToggleFalVisibilty => self.toggle_visibilty(),
+                Some(FalMessage::GlobalHotkeyTriggered(keybind)) => match keybind {
+                    KeyboardHookKeybind::OpenToggleFalVisibilty => {
+                        self.toggle_visibilty();
+                    }
                 },
                 Some(msg) => println!("invalid keyboard hook msg: {:?}", msg),
                 _ => (),

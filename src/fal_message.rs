@@ -1,3 +1,5 @@
+use fltk::enums::Key;
+
 #[derive(Debug)]
 pub enum Keybind {
     SelectionUp,
@@ -11,10 +13,7 @@ pub enum KeyboardHookKeybind {
 }
 
 #[derive(Debug)]
-pub enum FalMessageMainThread {
+pub enum FalMessage {
     KeybindPressed(Keybind),
-}
-#[derive(Debug)]
-pub enum FalMessageKeyboardHookThread {
     GlobalHotkeyTriggered(KeyboardHookKeybind),
 }
