@@ -11,6 +11,7 @@ use hotkey::{self, keys, modifiers};
 use crate::components::list_element_component::*;
 use crate::components::search_component::SearchComponent;
 use crate::fal_action::FalAction;
+use crate::fal_command::FalCommand;
 use crate::fal_message::*;
 use crate::platform_api;
 use crate::program_lister::get_all_programs;
@@ -191,6 +192,10 @@ impl FalApp {
                         self.toggle_visibilty();
                     }
                 },
+                Some(FalMessage::TextInput(text)) => {
+                    let command = FalCommand::parse(text);
+                    command.execute();
+                }
                 None => (),
             }
         }

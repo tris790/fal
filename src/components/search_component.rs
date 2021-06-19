@@ -18,7 +18,7 @@ impl SearchComponent {
         search_input.set_frame(FrameType::FlatBox);
         search_input.set_text_size(30);
 
-        search_input.handle(move |_, ev| match ev {
+        search_input.handle(move |search_input, ev| match ev {
             Event::KeyDown => {
                 if event_key_down(Key::Down) {
                     send_channel.send(FalMessage::KeybindPressed(Keybind::SelectionDown));
@@ -30,6 +30,7 @@ impl SearchComponent {
                     send_channel.send(FalMessage::KeybindPressed(Keybind::Execute));
                     return true;
                 } else {
+                    send_channel.send(FalMessage::TextInput(search_input.value()));
                     return false;
                 }
             }

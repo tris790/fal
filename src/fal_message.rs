@@ -14,4 +14,5 @@ pub enum KeyboardHookKeybind {
 pub enum FalMessage {
     KeybindPressed(Keybind),
     GlobalHotkeyTriggered(KeyboardHookKeybind),
+    TextInput(String),
 }
