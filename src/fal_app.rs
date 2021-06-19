@@ -146,7 +146,7 @@ impl FalApp {
             self.elements.len() as i32 * LIST_ITEM_HEIGHT + self.search_component.height();
         let new_window_width = WINDOW_WIDTH;
 
-        let (screen_width, screen_height) = platform_api::get_screen_size();
+        let (screen_width, screen_height) = platform_api::get_screen_size(self.window.raw_handle());
         println!("screen_work_area {:?}", app::screen_work_area(0));
         println!("screen_xywh {:?}", app::screen_xywh(0));
         println!("screen_coords {:?}", app::screen_coords());
@@ -159,7 +159,7 @@ impl FalApp {
 
         self.window.set_size(new_window_width, new_window_height);
         self.window.set_pos(center_x as i32, center_y as i32);
-        platform_api::focus_window();
+        platform_api::focus_window(self.window.raw_handle());
     }
 
     pub fn run(&mut self) {

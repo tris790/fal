@@ -9,7 +9,7 @@ use windows_bindings::{
     Windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow,
 };
 
-pub fn get_screen_size() -> (i32, i32) {
+pub fn get_screen_size(handle: *mut c_void) -> (i32, i32) {
     let MONITOR_DEFAULTTONEAREST: MONITOR_FROM_FLAGS = MONITOR_FROM_FLAGS::from(0x2);
     let hwnd = unsafe { GetForegroundWindow() };
     let monitor = unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) };
@@ -23,6 +23,6 @@ pub fn get_screen_size() -> (i32, i32) {
     (info.rcMonitor.right, info.rcMonitor.bottom)
 }
 
-pub fn focus_window() {
-    unsafe { SetFocus(HWND(0 as isize)) };
+pub fn focus_window(handle: *mut c_void) {
+    unsafe { SetFocus(HWND(handle as isize)) };
 }
