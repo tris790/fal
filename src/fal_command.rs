@@ -1,5 +1,6 @@
 use std::collections::btree_map::BTreeMap;
 
+#[derive(Copy, Clone)]
 pub enum FalCommandEnum {
     Calculation,
     Search,
@@ -27,9 +28,9 @@ pub struct FalCommandParser {
 impl FalCommandParser {
     pub fn new() -> FalCommandParser {
         let mut commands = BTreeMap::new();
+        commands.insert(String::from("$"), FalCommandEnum::Search);
         commands.insert(String::from("!"), FalCommandEnum::Cmd);
         commands.insert(String::from("#"), FalCommandEnum::Calculation);
-        commands.insert(String::from(""), FalCommandEnum::Search);
         FalCommandParser { commands }
     }
 
@@ -38,17 +39,17 @@ impl FalCommandParser {
             return None;
         };
 
-        let words: Vec<&str> = text.split("").collect();
-        if words.is_empty() {
-            return None;
+        let text_lower_case = text.to_lowercase();
+        for (prefix, command) in &self.commands {
+            let pattern = prefix.as_str();
+            if text_lower_case.starts_with(pattern) {
+                return Some(FalCommand {
+                    command: command.to_owned(),
+                    text: text[prefix.len()..].to_string(),
+                });
+            }
         }
 
-        let prefix = words[0].to_lowercase();
-        let command = self.commands.get(prefix.as_str()).or(None).unwrap();
-
-        return Some(FalCommand {
-            command: FalCommandEnum::Calculation,
-            text: text[prefix.len()..].to_string(),
-        });
+        return None;
     }
 }

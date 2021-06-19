@@ -11,7 +11,7 @@ use hotkey::{self, keys, modifiers};
 use crate::components::list_element_component::*;
 use crate::components::search_component::SearchComponent;
 use crate::fal_action::FalAction;
-use crate::fal_command::FalCommand;
+use crate::fal_command::{FalCommand, FalCommandParser};
 use crate::fal_message::*;
 use crate::platform_api;
 use crate::program_lister::get_all_programs;
@@ -51,6 +51,7 @@ pub struct FalApp {
     recv_channel: Receiver<FalMessage>,
     selected_index: usize,
     search_component: SearchComponent,
+    command_parser: FalCommandParser,
 }
 
 impl FalApp {
@@ -58,6 +59,7 @@ impl FalApp {
         let app = app::App::default();
         let (send_channel, recv_channel) = app::channel::<FalMessage>();
         let (send_channel_thread, _) = app::channel::<FalMessage>();
+        let command_parser = FalCommandParser::new();
 
         let mut window = Window::default().with_size(WINDOW_WIDTH, WINDOW_HEIGHT);
         window.set_color(Color::from_hex(0x9CA3AF));
@@ -110,6 +112,7 @@ impl FalApp {
             recv_channel,
             selected_index: 0,
             search_component,
+            command_parser,
         }
     }
 
@@ -193,8 +196,10 @@ impl FalApp {
                     }
                 },
                 Some(FalMessage::TextInput(text)) => {
-                    let command = FalCommand::parse(text);
-                    command.execute();
+                    if let Some(command) = self.command_parser.parse(text) {
+                        let result = command.execute();
+                        println!("result: {}", result);
+                    }
                 }
                 None => (),
             }

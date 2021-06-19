@@ -17,7 +17,6 @@ impl SearchComponent {
 
         search_input.set_frame(FrameType::FlatBox);
         search_input.set_text_size(30);
-
         search_input.handle(move |search_input, ev| match ev {
             Event::KeyDown => {
                 if event_key_down(Key::Down) {
@@ -29,8 +28,18 @@ impl SearchComponent {
                 } else if event_key_down(Key::Enter) {
                     send_channel.send(FalMessage::KeybindPressed(Keybind::Execute));
                     return true;
+                } else if event_key_down(Key::BackSpace) {
+                    let old_text = search_input.value();
+                    let new_length = if old_text.len() > 0 {
+                        old_text.len() - 1
+                    } else {
+                        0
+                    };
+                    send_channel.send(FalMessage::TextInput(old_text[0..new_length].to_string()));
+                    return false;
                 } else {
-                    send_channel.send(FalMessage::TextInput(search_input.value()));
+                    let text = format!("{}{}", search_input.value(), app::event_text());
+                    send_channel.send(FalMessage::TextInput(text));
                     return false;
                 }
             }
@@ -46,5 +55,9 @@ impl SearchComponent {
 
     pub fn height(&self) -> i32 {
         self.search_input.height()
+    }
+
+    pub fn value(&self) -> String {
+        self.search_input.value()
     }
 }
