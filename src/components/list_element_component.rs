@@ -33,7 +33,6 @@ impl ListElement {
         button.set_color(bg_color());
         button.set_label(&text);
         button.set_label_size(20);
-        button.visible_focus(false);
 
         ListElement {
             inner: button,

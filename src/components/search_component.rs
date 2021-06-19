@@ -1,5 +1,5 @@
 use fltk::{
-    app::{event_key_down, Sender},
+    app::{self, event_key_down, Sender},
     enums::{Event, FrameType, Key},
     input::Input,
     prelude::*,
@@ -40,8 +40,7 @@ impl SearchComponent {
     }
 
     pub fn focus(&mut self) {
-        self.search_input.take_focus().ok();
-        self.search_input.set_visible_focus();
+        app::set_focus(&self.search_input);
     }
 
     pub fn height(&self) -> i32 {

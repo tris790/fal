@@ -1,5 +1,5 @@
 use fltk::{
-    app::{self, event_key_down, Receiver},
+    app::{self, Receiver},
     enums::{Color, Event, FrameType, Key},
     group::Pack,
     input::Input,
@@ -12,6 +12,8 @@ use crate::components::list_element_component::*;
 use crate::components::search_component::SearchComponent;
 use crate::fal_action::FalAction;
 use crate::fal_message::*;
+use crate::platform_api;
+use crate::program_lister::get_all_programs;
 
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 500;
@@ -56,9 +58,7 @@ impl FalApp {
         let (send_channel, recv_channel) = app::channel::<FalMessage>();
         let (send_channel_thread, _) = app::channel::<FalMessage>();
 
-        let mut window = Window::default()
-            .with_size(WINDOW_WIDTH, WINDOW_HEIGHT)
-            .center_screen();
+        let mut window = Window::default().with_size(WINDOW_WIDTH, WINDOW_HEIGHT);
         window.set_color(Color::from_hex(0x9CA3AF));
         window.set_border(false);
 
@@ -74,13 +74,13 @@ impl FalApp {
 
         let selected_index = 0;
         let mut elements: Vec<ListElement> = Vec::new();
-        let programs = get_programs();
+        let programs = get_all_programs();
         for (index, program) in programs.iter().enumerate() {
             elements.push(ListElement::new(
-                program.text.as_str(),
+                program.name.as_str(),
                 WINDOW_WIDTH,
                 LIST_ITEM_HEIGHT,
-                FalAction::LAUNCH(program.cmd.to_string()),
+                FalAction::LAUNCH(program.path.to_string()),
             ));
 
             if index == selected_index {
@@ -146,13 +146,15 @@ impl FalApp {
             self.elements.len() as i32 * LIST_ITEM_HEIGHT + self.search_component.height();
         let new_window_width = WINDOW_WIDTH;
 
-        let (screen_width, screen_height) = app::screen_size();
+        let (screen_width, screen_height) = platform_api::get_screen_size();
 
-        let center_x = (screen_width / 2 as f64) - (new_window_width as f64 / 2 as f64);
-        let center_y = (screen_height / 2 as f64) - (new_window_height as f64 / 2 as f64);
+        let center_x = (screen_width - new_window_width) / 2;
+        let center_y = (screen_height - new_window_height) / 2;
 
         self.window.set_size(new_window_width, new_window_height);
         self.window.set_pos(center_x as i32, center_y as i32);
+        platform_api::focus_window(self.window.raw_handle());
+        // println!("x: {}, y: {}", center_x, center_y);
     }
 
     pub fn run(&mut self) {
@@ -160,7 +162,6 @@ impl FalApp {
         self.window.show();
 
         self.search_component.focus();
-
         self.fit_to_elements();
 
         while self.app.wait() {
