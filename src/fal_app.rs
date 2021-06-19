@@ -147,14 +147,19 @@ impl FalApp {
         let new_window_width = WINDOW_WIDTH;
 
         let (screen_width, screen_height) = platform_api::get_screen_size();
+        println!("screen_work_area {:?}", app::screen_work_area(0));
+        println!("screen_xywh {:?}", app::screen_xywh(0));
+        println!("screen_coords {:?}", app::screen_coords());
+        println!("screen_scale {:?}", app::screen_scale(0));
+
+        println!("x: {}, y: {}", screen_width, screen_height);
 
         let center_x = (screen_width - new_window_width) / 2;
         let center_y = (screen_height - new_window_height) / 2;
 
         self.window.set_size(new_window_width, new_window_height);
         self.window.set_pos(center_x as i32, center_y as i32);
-        platform_api::focus_window(self.window.raw_handle());
-        // println!("x: {}, y: {}", center_x, center_y);
+        platform_api::focus_window();
     }
 
     pub fn run(&mut self) {
