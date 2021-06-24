@@ -1,5 +1,14 @@
 use std::collections::btree_map::BTreeMap;
 
+struct FalResult {
+    text: String,
+    action: bool,
+}
+
+struct CommandResult {
+    results: Vec<FalResult>,
+}
+
 #[derive(Copy, Clone)]
 pub enum FalCommandEnum {
     Calculation,

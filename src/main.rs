@@ -3,7 +3,8 @@
 mod components;
 mod fal_action;
 mod fal_app;
-mod fal_command;
+// mod fal_command;
+mod fal_command2;
 mod fal_message;
 mod platform_api;
 mod program_lister;
