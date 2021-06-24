@@ -110,24 +110,16 @@ impl FalApp {
         self.window.show();
 
         self.search_component.focus();
-
+        self.set_results(vec![]);
         self.fit_to_elements();
+
         while self.app.wait() {
             match self.recv_channel.recv() {
                 Some(FalMessage::KeybindPressed(keybind)) => match keybind {
                     Keybind::SelectionUp => {
-                        if self.selected_index == 0 {
-                            self.result_component
-                                .set_selected_element(self.result_component.len() - 1)
-                        } else {
-                            self.result_component
-                                .set_selected_element(self.selected_index - 1);
-                        }
+                        self.result_component.scroll_up();
                     }
-                    Keybind::SelectionDown => {
-                        self.result_component
-                            .set_selected_element(self.selected_index + 1);
-                    }
+                    Keybind::SelectionDown => self.result_component.scroll_down(),
                     Keybind::Execute => {
                         // self.execute_selected_element();
                     }
@@ -139,7 +131,7 @@ impl FalApp {
                 },
                 Some(FalMessage::TextInput(text)) => {
                     println!("input {}", text);
-                    let result = self.command_parser.on_textbox_changed(text);
+                    let result = self.command_parser.parse(text);
                     self.set_results(result);
                     self.fit_to_elements();
                 }

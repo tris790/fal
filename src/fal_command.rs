@@ -59,7 +59,7 @@ impl FalCommandParser {
         }
     }
 
-    pub fn on_textbox_changed(&self, input: String) -> Vec<String> {
+    pub fn parse(&self, input: String) -> Vec<String> {
         for command in &self.commands {
             if command.regex_pattern.is_match(input.as_str()) {
                 println!("pattern matched {} {}", input, command.regex_pattern);

@@ -26,27 +26,13 @@ impl ResultComponent {
         let pack = Pack::new(0, height, width, height, "");
 
         let mut elements: Vec<ListElement> = Vec::new();
-        let programs: Vec<String> = vec![
-            String::from("vs code"),
-            String::from("calc"),
-            String::from("chrome"),
-            String::from("warframe"),
-        ]
-        .into_iter()
-        .take(max_element_count)
-        .collect();
-
-        for program in programs {
-            elements.push(ListElement::new(
-                program.as_str(),
-                width,
-                height,
-                FalAction::NONE,
-            ));
+        for _ in 0..max_element_count {
+            elements.push(ListElement::new("", width, height, FalAction::NONE));
         }
         elements[0].set_selected_state(SelectedState::Selected);
 
         pack.end();
+
         let count = elements.len();
         ResultComponent {
             elements,
@@ -75,6 +61,10 @@ impl ResultComponent {
                 }
             }
         }
+
+        if self.element_count > 0 && self.selected_index > self.element_count - 1 {
+            self.set_selected_element(self.element_count - 1);
+        }
     }
 
     pub fn set_selected_element(&mut self, new_selected: usize) {
@@ -97,5 +87,24 @@ impl ResultComponent {
 
     pub fn len(&self) -> usize {
         self.element_count
+    }
+
+    pub fn execute(&mut self, element: i32) {}
+
+    pub fn scroll_up(&mut self) {
+        if self.selected_index == 0 {
+            self.set_selected_element(self.element_count - 1);
+        } else {
+            self.set_selected_element(self.selected_index - 1);
+        }
+    }
+
+    pub fn scroll_down(&mut self) {
+        if self.selected_index == self.element_count - 1 {
+            // scroll back up since we hit the bottom
+            self.set_selected_element(0);
+        } else {
+            self.set_selected_element(self.selected_index + 1);
+        }
     }
 }
