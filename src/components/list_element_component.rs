@@ -20,8 +20,8 @@ pub enum SelectedState {
 }
 
 pub struct ListElement {
-    inner: Button,
-    action: FalAction,
+    pub inner: Button,
+    pub action: FalAction,
 }
 
 impl ListElement {
@@ -56,7 +56,8 @@ impl ListElement {
         }
     }
 
-    pub fn height(&self) -> i32 {
-        self.inner.height()
+    pub fn update_text_no_redraw(&mut self, text: &str) {
+        self.inner.set_label(text);
+        self.inner.set_damage(true);
     }
 }

@@ -1,5 +1,6 @@
 use regex::Regex;
 
+#[derive(Debug)]
 pub struct BestCommand {
     pub name: String,
     pub regex_pattern: Regex,
@@ -29,17 +30,19 @@ impl BestCommandParser {
         let search_command = BestCommand::new(
             String::from("search"),
             Regex::new("^!").expect("invalid regex for search command"),
-            |input| match Regex::new(input.as_str()) {
+            |input| match Regex::new(&input.as_str()[1..]) {
                 Ok(current_search_regex) => {
                     let programs = vec![
                         String::from("chrome"),
                         String::from("vs code"),
                         String::from("calc"),
                     ];
-                    programs
+                    let output = programs
                         .into_iter()
                         .filter(|x| current_search_regex.is_match(x))
-                        .collect()
+                        .collect();
+                    println!("programs {:?}", output);
+                    output
                 }
                 Err(_) => vec![],
             },
@@ -57,8 +60,9 @@ impl BestCommandParser {
     }
 
     pub fn on_textbox_changed(&self, input: String) -> Vec<String> {
-        for command in self.commands {
+        for command in &self.commands {
             if command.regex_pattern.is_match(input.as_str()) {
+                println!("pattern matched {} {}", input, command.regex_pattern);
                 return (command.action)(input);
             }
         }
