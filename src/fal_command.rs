@@ -1,64 +1,71 @@
-use std::collections::btree_map::BTreeMap;
+use regex::Regex;
 
-struct FalResult {
-    text: String,
-    action: bool,
-}
-
-struct CommandResult {
-    results: Vec<FalResult>,
-}
-
-#[derive(Copy, Clone)]
-pub enum FalCommandEnum {
-    Calculation,
-    Search,
-    Cmd,
-}
-
+#[derive(Debug)]
 pub struct FalCommand {
-    command: FalCommandEnum,
-    text: String,
+    pub name: String,
+    pub regex_pattern: Regex,
+    pub action: fn(String) -> Vec<String>,
 }
 
 impl FalCommand {
-    pub fn execute(&self) -> String {
-        match self.command {
-            FalCommandEnum::Calculation => String::from("Calculation output"),
-            FalCommandEnum::Search => String::from("Search output"),
-            FalCommandEnum::Cmd => String::from("Cmd output"),
+    pub fn new(
+        name: String,
+        regex_pattern: Regex,
+        action: fn(String) -> Vec<String>,
+    ) -> FalCommand {
+        FalCommand {
+            name,
+            regex_pattern,
+            action,
         }
     }
 }
+
 pub struct FalCommandParser {
-    commands: BTreeMap<String, FalCommandEnum>,
+    commands: Vec<FalCommand>,
 }
 
 impl FalCommandParser {
     pub fn new() -> FalCommandParser {
-        let mut commands = BTreeMap::new();
-        commands.insert(String::from("$"), FalCommandEnum::Search);
-        commands.insert(String::from("!"), FalCommandEnum::Cmd);
-        commands.insert(String::from("#"), FalCommandEnum::Calculation);
-        FalCommandParser { commands }
+        let search_command = FalCommand::new(
+            String::from("search"),
+            Regex::new("^!").expect("invalid regex for search command"),
+            |input| match Regex::new(&input.as_str()[1..]) {
+                Ok(current_search_regex) => {
+                    let programs = vec![
+                        String::from("chrome"),
+                        String::from("vs code"),
+                        String::from("calc"),
+                    ];
+                    let output = programs
+                        .into_iter()
+                        .filter(|x| current_search_regex.is_match(x))
+                        .collect();
+                    println!("programs {:?}", output);
+                    output
+                }
+                Err(_) => vec![],
+            },
+        );
+
+        let calc_command = FalCommand::new(
+            String::from("calc"),
+            Regex::new("^=").expect("invalid regex pattern for calc command"),
+            |input| vec![String::from("=54")],
+        );
+
+        FalCommandParser {
+            commands: vec![search_command, calc_command],
+        }
     }
 
-    pub fn parse(&self, text: String) -> Option<FalCommand> {
-        if text.is_empty() {
-            return None;
-        };
-
-        let text_lower_case = text.to_lowercase();
-        for (prefix, command) in &self.commands {
-            let pattern = prefix.as_str();
-            if text_lower_case.starts_with(pattern) {
-                return Some(FalCommand {
-                    command: command.to_owned(),
-                    text: text[prefix.len()..].to_string(),
-                });
+    pub fn on_textbox_changed(&self, input: String) -> Vec<String> {
+        for command in &self.commands {
+            if command.regex_pattern.is_match(input.as_str()) {
+                println!("pattern matched {} {}", input, command.regex_pattern);
+                return (command.action)(input);
             }
         }
-
-        return None;
+        return vec![];
     }
 }

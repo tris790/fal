@@ -10,8 +10,7 @@ use hotkey::{self, keys, modifiers};
 
 use crate::components::{result_component::ResultComponent, search_component::SearchComponent};
 use crate::fal_action::FalAction;
-use crate::fal_command2::BestCommandParser;
-// use crate::fal_command::{FalCommand, FalCommandParser};
+use crate::fal_command::FalCommandParser;
 use crate::fal_message::*;
 use crate::platform_api;
 use crate::program_lister::get_all_programs;
@@ -33,7 +32,7 @@ pub struct FalApp {
     recv_channel: Receiver<FalMessage>,
     selected_index: usize,
     search_component: SearchComponent,
-    command_parser: BestCommandParser,
+    command_parser: FalCommandParser,
     result_component: ResultComponent,
 }
 
@@ -42,7 +41,7 @@ impl FalApp {
         let app = app::App::default();
         let (send_channel, recv_channel) = app::channel::<FalMessage>();
         let (send_channel_thread, _) = app::channel::<FalMessage>();
-        let command_parser = BestCommandParser::new();
+        let command_parser = FalCommandParser::new();
 
         let mut window = Window::default().with_size(WINDOW_WIDTH, WINDOW_HEIGHT);
         window.set_color(Color::from_hex(0x9CA3AF));
@@ -80,13 +79,11 @@ impl FalApp {
     }
 
     fn toggle_visibilty(&mut self) {
-        if self.window.visible() {
-            println!("Window was visible");
-            self.window.iconize();
+        if platform_api::is_window_focused(self.window.raw_handle()) {
+            platform_api::hide_window(self.window.raw_handle());
         } else {
-            println!("Window was hidden");
-            self.window.show();
-            println!("Window is now {}", self.window.visible());
+            platform_api::show_window(self.window.raw_handle());
+            platform_api::focus_window(self.window.raw_handle());
         }
     }
 
@@ -98,11 +95,6 @@ impl FalApp {
         let new_window_width = WINDOW_WIDTH;
 
         let (screen_width, screen_height) = platform_api::get_screen_size(self.window.raw_handle());
-        println!("screen_work_area {:?}", app::screen_work_area(0));
-        println!("screen_xywh {:?}", app::screen_xywh(0));
-        println!("screen_coords {:?}", app::screen_coords());
-        println!("screen_scale {:?}", app::screen_scale(0));
-
         println!("x: {}, y: {}", screen_width, screen_height);
 
         let center_x = (screen_width - new_window_width) / 2;
