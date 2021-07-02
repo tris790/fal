@@ -54,11 +54,13 @@ impl ListElement {
         }
     }
 
-    pub fn update(&mut self, text: &str, action: &'static dyn Fn(&str)) {
+    pub fn update(&mut self, text: &str, action: &'static dyn Fn(&str), selected: SelectedState) {
         self.inner.set_label(text);
         self.inner.set_damage(true);
         self.inner.redraw();
 
         self.action = action;
+
+        self.set_selected_state(selected);
     }
 }
