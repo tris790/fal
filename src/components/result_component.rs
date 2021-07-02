@@ -45,6 +45,21 @@ impl ResultComponent {
         }
     }
 
+    fn select_first_element(&mut self) {
+        self.selected_index = 0;
+        self.display_start_index = 0;
+    }
+
+    fn select_last_element(&mut self) {
+        let element_count = self.all_results.len();
+        if element_count == 0 {
+            return;
+        }
+
+        self.selected_index = element_count - 1;
+        self.display_start_index = element_count - self.displayed_element_count();
+    }
+
     pub fn scroll_up(&mut self) {
         if self.all_results.len() == 0 {
             return;
@@ -56,8 +71,7 @@ impl ResultComponent {
                 self.display_start_index -= 1;
             }
         } else {
-            self.selected_index = self.all_results.len() - 1;
-            self.display_start_index = self.all_results.len() - self.max_element_displayed as usize;
+            self.select_last_element();
         }
 
         self.update_displayed();
@@ -79,8 +93,7 @@ impl ResultComponent {
                 self.display_start_index += 1;
             }
         } else {
-            self.selected_index = 0;
-            self.display_start_index = 0;
+            self.select_first_element();
         }
 
         self.update_displayed();
@@ -88,11 +101,9 @@ impl ResultComponent {
 
     fn update_displayed(&mut self) {
         let new_element_count = self.displayed_element_count();
-        println!("updating displayed");
 
         // Update the display for all elements
         for index in 0..new_element_count {
-            println!("updating [{}]", index);
             let result_index = index + self.display_start_index;
             let result = self
                 .all_results
@@ -121,7 +132,12 @@ impl ResultComponent {
     }
     pub fn update_results(&mut self, new_results: Vec<String>) {
         self.all_results = new_results;
-        println!("Updating results {} elements", self.all_results.len());
+
+        if self.selected_index >= self.displayed_element_count() {
+            // selection is out of bound, select last new element
+            self.select_last_element();
+        }
+
         self.update_displayed();
     }
 
