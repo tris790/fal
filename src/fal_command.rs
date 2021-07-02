@@ -1,3 +1,4 @@
+use crate::platform_api;
 use regex::Regex;
 
 #[derive(Debug)]
@@ -32,11 +33,7 @@ impl FalCommandParser {
             Regex::new("^!").expect("invalid regex for search command"),
             |input| match Regex::new(&input.as_str()[1..]) {
                 Ok(current_search_regex) => {
-                    let programs = vec![
-                        String::from("chrome"),
-                        String::from("vs code"),
-                        String::from("calc"),
-                    ];
+                    let programs = platform_api::get_programs();
                     let output = programs
                         .into_iter()
                         .filter(|x| current_search_regex.is_match(x))

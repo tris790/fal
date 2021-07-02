@@ -51,3 +51,14 @@ pub fn show_window(handle: *mut c_void) {
 pub fn hide_window(handle: *mut c_void) {
     unsafe { ShowWindow(HWND(handle as isize), SW_HIDE) };
 }
+
+pub fn get_programs() -> Vec<String> {
+    vec![
+        String::from("chrome"),
+        String::from("vs code"),
+        String::from("calc"),
+        String::from("warframe"),
+        String::from("skyrim"),
+        String::from("vlc"),
+    ]
+}

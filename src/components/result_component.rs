@@ -1,110 +1,74 @@
-use fltk::{
-    app::{self, Receiver},
-    enums::{Color, Event, FrameType, Key},
-    group::Pack,
-    input::Input,
-    prelude::*,
-    window::Window,
-};
+use std::cmp::min;
 
-use crate::components::list_element_component::*;
-use crate::fal_action::FalAction;
+use fltk::{group::Pack, prelude::*};
+
+use crate::{components::list_element_component::SelectedState, fal_action::no_action};
+
+use super::list_element_component::ListElement;
+
 pub struct ResultComponent {
-    pub elements: Vec<ListElement>,
-    pub selected_index: usize,
-    pub width: i32,
-    pub height: i32,
-    pub pack: Pack,
-    pub max_element_count: usize,
-    pub element_count: usize,
+    all_results: Vec<String>,
+    max_element_displayed: u32,
+    displayed_elements: Vec<ListElement>,
+    display_start_index: usize,
 }
 
 impl ResultComponent {
-    pub fn new(width: i32, height: i32) -> ResultComponent {
-        let selected_index = 0;
-        let max_element_count = 3;
-        let pack = Pack::new(0, height, width, height, "");
+    pub fn new(
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+        max_element_displayed: u32,
+    ) -> ResultComponent {
+        let display_start_index = 0;
+        let all_results = vec![];
 
-        let mut elements: Vec<ListElement> = Vec::new();
-        for _ in 0..max_element_count {
-            elements.push(ListElement::new("", width, height, FalAction::NONE));
-        }
-        elements[0].set_selected_state(SelectedState::Selected);
+        let pack = Pack::new(x, y, width, height, "");
+        let element_height = height / max_element_displayed as i32;
+        println!("e height {}", element_height);
+        let mut displayed_elements: Vec<ListElement> = (0..max_element_displayed)
+            .into_iter()
+            .map(|_| ListElement::new("", width, element_height, &no_action))
+            .collect();
 
         pack.end();
+        displayed_elements[0].set_selected_state(SelectedState::Selected);
 
-        let count = elements.len();
         ResultComponent {
-            elements,
-            selected_index,
-            width,
-            height,
-            pack,
-            max_element_count,
-            element_count: count,
+            display_start_index,
+            all_results,
+            max_element_displayed,
+            displayed_elements,
         }
     }
+    pub fn scroll_up(&mut self) {}
+    pub fn scroll_down(&mut self) {}
 
-    pub fn update_result(&mut self, new_elements: Vec<String>) {
-        if new_elements.len() >= self.max_element_count {
-            self.element_count = self.max_element_count;
-            for (index, element) in self.elements.iter_mut().enumerate() {
-                element.update_text_no_redraw(new_elements[index].as_str());
-            }
-        } else {
-            self.element_count = new_elements.len();
-            for (index, element) in self.elements.iter_mut().enumerate() {
-                if index < new_elements.len() {
-                    element.update_text_no_redraw(new_elements[index].as_str());
-                } else {
-                    element.update_text_no_redraw("");
-                }
-            }
-        }
+    fn update_displayed(&mut self) {
+        let new_element_count = self.displayed_element_count();
+        println!("updating results");
+        for index in 0..new_element_count {
+            println!("updating [{}]", index);
+            let result_index = index + self.display_start_index;
+            let result = self
+                .all_results
+                .get(result_index)
+                .expect(format!("[Result_Component] Cannot get result[{}]", index).as_str());
 
-        if self.element_count > 0 && self.selected_index > self.element_count - 1 {
-            self.set_selected_element(self.element_count - 1);
-        }
-    }
+            let display_element = self.displayed_elements.get_mut(index).expect(
+                format!("[Result_Component] Cannot get displayed element[{}]", index).as_str(),
+            );
 
-    pub fn set_selected_element(&mut self, new_selected: usize) {
-        let selected_element = self.elements.get_mut(self.selected_index).unwrap();
-        selected_element.set_selected_state(SelectedState::NotSelected);
-
-        if new_selected >= self.elements.len() {
-            self.selected_index = 0;
-        } else {
-            self.selected_index = new_selected;
-        }
-
-        let new_selected_element = self.elements.get_mut(self.selected_index).unwrap();
-        new_selected_element.set_selected_state(SelectedState::Selected);
-    }
-
-    pub fn execute_selected_element(&mut self) {
-        self.elements.get(self.selected_index).unwrap().execute();
-    }
-
-    pub fn len(&self) -> usize {
-        self.element_count
-    }
-
-    pub fn execute(&mut self, element: i32) {}
-
-    pub fn scroll_up(&mut self) {
-        if self.selected_index == 0 {
-            self.set_selected_element(self.element_count - 1);
-        } else {
-            self.set_selected_element(self.selected_index - 1);
+            display_element.update(&result.as_str(), &no_action);
         }
     }
+    pub fn update_results(&mut self, new_results: Vec<String>) {
+        self.all_results = new_results;
+        self.update_displayed();
+    }
 
-    pub fn scroll_down(&mut self) {
-        if self.selected_index == self.element_count - 1 {
-            // scroll back up since we hit the bottom
-            self.set_selected_element(0);
-        } else {
-            self.set_selected_element(self.selected_index + 1);
-        }
+    pub fn displayed_element_count(&self) -> usize {
+        min(self.all_results.len(), self.max_element_displayed as usize)
     }
 }
