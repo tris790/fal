@@ -2,10 +2,7 @@ use std::cmp::min;
 
 use fltk::{group::Pack, prelude::*};
 
-use crate::{
-    components::list_element_component::SelectedState,
-    fal_action::{FalAction, NoAction},
-};
+use crate::{components::list_element_component::SelectedState, fal_action::FalAction};
 
 use super::list_element_component::ListElement;
 
@@ -38,7 +35,7 @@ impl ResultsComponent {
         let element_height = height / max_element_displayed as i32;
         let mut displayed_elements: Vec<ListElement> = (0..max_element_displayed)
             .into_iter()
-            .map(|_| ListElement::new("", width, element_height, Box::new(NoAction {})))
+            .map(|_| ListElement::new("", width, element_height))
             .collect();
 
         pack.end();

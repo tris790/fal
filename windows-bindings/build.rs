@@ -13,6 +13,7 @@ fn main() {
         Windows::Win32::UI::KeyboardAndMouseInput::SetActiveWindow,
         Windows::Win32::UI::WindowsAndMessaging::ShowWindow,
         Windows::Win32::UI::WindowsAndMessaging::SHOW_WINDOW_CMD,
-        Windows::Win32::UI::WindowsAndMessaging::BringWindowToTop
+        Windows::Win32::UI::WindowsAndMessaging::BringWindowToTop,
+        Windows::Win32::UI::WindowsAndMessaging::SetForegroundWindow
     };
 }

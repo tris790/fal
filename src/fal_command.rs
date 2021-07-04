@@ -1,6 +1,6 @@
 use crate::{
     components::result_component::ResultElement,
-    fal_action::{ExecuteAction, FalAction, NoAction},
+    fal_action::{ExecuteAction, NoAction},
     platform_api,
 };
 use regex::{Regex, RegexBuilder};

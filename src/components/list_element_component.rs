@@ -4,8 +4,6 @@ use fltk::{
     prelude::*,
 };
 
-use crate::fal_action::FalAction;
-
 fn bg_color() -> Color {
     Color::from_rgb(51, 51, 51)
 }
@@ -24,7 +22,7 @@ pub struct ListElement {
 }
 
 impl ListElement {
-    pub fn new(text: &str, width: i32, height: i32, action: Box<dyn FalAction>) -> ListElement {
+    pub fn new(text: &str, width: i32, height: i32) -> ListElement {
         let mut button = Button::default().with_size(width, height).with_label(text);
         button.set_label_color(Color::from_rgb(200, 200, 170));
         button.set_down_frame(FrameType::FlatBox);

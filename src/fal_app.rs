@@ -1,3 +1,5 @@
+use std::ffi::c_void;
+
 use fltk::{
     app::{self, Receiver},
     enums::Color,
@@ -23,6 +25,7 @@ pub struct FalApp {
     search_component: SearchComponent,
     command_parser: FalCommandParser,
     result_component: ResultsComponent,
+    handle: *mut c_void,
 }
 
 impl FalApp {
@@ -57,6 +60,8 @@ impl FalApp {
             hotkey.listen();
         });
 
+        let handle = std::ptr::null_mut();
+
         FalApp {
             window,
             app,
@@ -64,15 +69,18 @@ impl FalApp {
             search_component,
             command_parser,
             result_component,
+            handle,
         }
     }
 
     fn toggle_visibilty(&mut self) {
-        if platform_api::is_window_focused(self.window.raw_handle()) {
-            platform_api::hide_window(self.window.raw_handle());
+        if platform_api::is_window_focused(self.handle) {
+            println!("window was focused, hide it");
+            platform_api::hide_window(self.handle);
         } else {
-            platform_api::show_window(self.window.raw_handle());
-            platform_api::focus_window(self.window.raw_handle());
+            println!("window was hidden, focus it");
+            platform_api::show_window(self.handle);
+            platform_api::focus_window(self.handle);
         }
     }
 
@@ -84,7 +92,7 @@ impl FalApp {
             + self.search_component.height();
         let new_window_width = WINDOW_WIDTH;
 
-        let (screen_width, screen_height) = platform_api::get_screen_size(self.window.raw_handle());
+        let (screen_width, screen_height) = platform_api::get_screen_size(self.handle);
         // println!("x: {}, y: {}", screen_width, screen_height);
 
         let center_x = (screen_width - new_window_width) / 2;
@@ -98,6 +106,7 @@ impl FalApp {
     pub fn run(&mut self) {
         self.window.end();
         self.window.show();
+        self.handle = self.window.raw_handle().to_owned();
 
         self.search_component.focus();
         self.fit_to_elements();
