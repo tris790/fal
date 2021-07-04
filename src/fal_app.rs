@@ -13,12 +13,12 @@ use crate::fal_command::FalCommandParser;
 use crate::fal_message::*;
 use crate::platform_api;
 
-const MAX_RESULT_DISPLAYED: u32 = 3; //(WINDOW_HEIGHT / LIST_ITEM_HEIGHT) as u32;
-const WINDOW_WIDTH: i32 = 800;
 const SEARCH_BAR_HEIGHT: i32 = 50;
 const LIST_ITEM_HEIGHT: i32 = 50;
 
 pub struct FalApp {
+    max_result_displayed: u32,
+    window_width: i32,
     window: Window,
     app: app::App,
     recv_channel: Receiver<FalMessage>,
@@ -30,6 +30,9 @@ pub struct FalApp {
 
 impl FalApp {
     pub fn new() -> FalApp {
+        let max_result_displayed = 3;
+        let window_width = 800;
+
         let app = app::App::default();
         let (send_channel, recv_channel) = app::channel::<FalMessage>();
         let (send_channel_thread, _) = app::channel::<FalMessage>();
@@ -39,13 +42,13 @@ impl FalApp {
         window.set_color(Color::from_hex(0x9CA3AF));
         window.set_border(false);
 
-        let search_component = SearchComponent::new(WINDOW_WIDTH, SEARCH_BAR_HEIGHT, send_channel);
+        let search_component = SearchComponent::new(window_width, SEARCH_BAR_HEIGHT, send_channel);
         let result_component = ResultsComponent::new(
             0,
             SEARCH_BAR_HEIGHT,
-            WINDOW_WIDTH,
-            LIST_ITEM_HEIGHT * MAX_RESULT_DISPLAYED as i32,
-            MAX_RESULT_DISPLAYED,
+            window_width,
+            LIST_ITEM_HEIGHT * max_result_displayed as i32,
+            max_result_displayed,
         );
 
         std::thread::spawn(move || {
@@ -63,6 +66,8 @@ impl FalApp {
         let handle = std::ptr::null_mut();
 
         FalApp {
+            max_result_displayed,
+            window_width,
             window,
             app,
             recv_channel,
@@ -75,10 +80,8 @@ impl FalApp {
 
     fn toggle_visibilty(&mut self) {
         if platform_api::is_window_focused(self.handle) {
-            println!("window was focused, hide it");
             platform_api::hide_window(self.handle);
         } else {
-            println!("window was hidden, focus it");
             platform_api::show_window(self.handle);
             platform_api::focus_window(self.handle);
         }
@@ -86,14 +89,13 @@ impl FalApp {
 
     fn fit_to_elements(&mut self) {
         let max_window_height =
-            MAX_RESULT_DISPLAYED as i32 * LIST_ITEM_HEIGHT + self.search_component.height();
+            self.max_result_displayed as i32 * LIST_ITEM_HEIGHT + self.search_component.height();
         let new_window_height = self.result_component.displayed_element_count() as i32
             * LIST_ITEM_HEIGHT
             + self.search_component.height();
-        let new_window_width = WINDOW_WIDTH;
+        let new_window_width = self.window_width;
 
         let (screen_width, screen_height) = platform_api::get_screen_size(self.handle);
-        // println!("x: {}, y: {}", screen_width, screen_height);
 
         let center_x = (screen_width - new_window_width) / 2;
         let center_y = (screen_height - max_window_height) / 2;
@@ -127,7 +129,6 @@ impl FalApp {
                     }
                 },
                 Some(FalMessage::TextInput(text)) => {
-                    // println!("input {}", text);
                     let results = self.command_parser.parse(text.as_str());
                     self.result_component.update_results(results);
                     self.fit_to_elements();

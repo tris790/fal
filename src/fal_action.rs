@@ -40,9 +40,7 @@ impl FalAction for LaunchAction {
     }
 }
 impl FalAction for NoAction {
-    fn execute(&mut self, input: &str) {
-        todo!()
-    }
+    fn execute(&mut self, _: &str) {}
 }
 impl FalAction for OpenInBrowserAction {
     fn execute(&mut self, input: &str) {
