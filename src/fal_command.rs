@@ -1,21 +1,21 @@
 use crate::{
     components::result_component::ResultElement,
     fal_action::{ExecuteAction, NoAction},
-    platform_api,
+    platform_api::{self, Program},
 };
 use regex::{Regex, RegexBuilder};
 
 pub struct FalCommand {
     pub name: String,
     pub regex_pattern: Regex,
-    pub on_command_matched: fn(&str) -> Vec<ResultElement>,
+    pub on_command_matched: fn(&FalCommandParser, &str) -> Vec<ResultElement>,
 }
 
 impl FalCommand {
     pub fn new(
         name: String,
         regex_pattern: Regex,
-        on_command_matched: fn(&str) -> Vec<ResultElement>,
+        on_command_matched: fn(&FalCommandParser, &str) -> Vec<ResultElement>,
     ) -> FalCommand {
         FalCommand {
             name,
@@ -27,21 +27,20 @@ impl FalCommand {
 
 pub struct FalCommandParser {
     commands: Vec<FalCommand>,
+    programs: Vec<Program>,
 }
 
 impl FalCommandParser {
     pub fn new() -> FalCommandParser {
-        let search_command = FalCommand::new(
-            String::from("Search"),
-            Regex::new("^!").expect("invalid regex for search command"),
-            |input| match RegexBuilder::new(&input[1..])
-                .case_insensitive(true)
-                .build()
-            {
+        let programs = platform_api::get_programs();
+        let find_command = FalCommand::new(
+            String::from("Find a program to launch"),
+            Regex::new("").expect("invalid regex for search command"),
+            |parser, input| match RegexBuilder::new(input).case_insensitive(true).build() {
                 Ok(reg) => {
-                    let programs = platform_api::get_programs();
-                    let output: Vec<ResultElement> = programs
-                        .into_iter()
+                    let output: Vec<ResultElement> = parser
+                        .programs
+                        .iter()
                         .filter(|x| reg.is_match(x.name.as_str()))
                         .map(|program| ResultElement {
                             text: program.name.to_owned(),
@@ -57,9 +56,9 @@ impl FalCommandParser {
         );
 
         let calculation_command = FalCommand::new(
-            String::from("Calc"),
+            String::from("Calculate an expression"),
             Regex::new("^=").expect("invalid regex pattern for calc command"),
-            |input| {
+            |_, input| {
                 let expression = &input[1..];
                 vec![ResultElement {
                     text: expression.to_owned(),
@@ -67,16 +66,20 @@ impl FalCommandParser {
                 }]
             },
         );
-        let commands = vec![search_command, calculation_command];
+        let commands = vec![calculation_command, find_command];
 
-        FalCommandParser { commands }
+        FalCommandParser { commands, programs }
     }
 
     pub fn parse(&self, input: &str) -> Vec<ResultElement> {
+        if input.len() == 0 {
+            return vec![];
+        }
+
         for command in &self.commands {
             if command.regex_pattern.is_match(input) {
                 println!("pattern matched {} {}", input, command.regex_pattern);
-                return (command.on_command_matched)(input);
+                return (command.on_command_matched)(self, input);
             }
         }
 
