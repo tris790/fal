@@ -52,13 +52,40 @@ pub fn hide_window(handle: *mut c_void) {
     unsafe { ShowWindow(HWND(handle as isize), SW_HIDE) };
 }
 
-pub fn get_programs() -> Vec<String> {
+pub struct Program {
+    pub name: String,
+    pub launch_cmd: String,
+}
+
+pub fn get_programs() -> Vec<Program> {
     vec![
-        String::from("chrome"),
-        String::from("vs code"),
-        String::from("calc"),
-        String::from("warframe"),
-        String::from("skyrim"),
-        String::from("vlc"),
+        Program {
+            name: String::from("VS Code"),
+            launch_cmd: String::from("code"),
+        },
+        Program {
+            name: String::from("Calculator"),
+            launch_cmd: String::from("calc"),
+        },
+        Program {
+            name: String::from("Edge"),
+            launch_cmd: String::from("msedge"),
+        },
+        Program {
+            name: String::from("VLC"),
+            launch_cmd: String::from("vlc"),
+        },
+        Program {
+            name: String::from("Terminal"),
+            launch_cmd: String::from("wt"),
+        },
+        Program {
+            name: String::from("Discord"),
+            launch_cmd: String::from("discord"),
+        },
+        Program {
+            name: String::from("File Explorer"),
+            launch_cmd: String::from("explorer"),
+        },
     ]
 }

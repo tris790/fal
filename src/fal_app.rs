@@ -6,7 +6,7 @@ use fltk::{
 };
 use hotkey::{self, keys, modifiers};
 
-use crate::components::{result_component::ResultComponent, search_component::SearchComponent};
+use crate::components::{result_component::ResultsComponent, search_component::SearchComponent};
 use crate::fal_command::FalCommandParser;
 use crate::fal_message::*;
 use crate::platform_api;
@@ -22,7 +22,7 @@ pub struct FalApp {
     recv_channel: Receiver<FalMessage>,
     search_component: SearchComponent,
     command_parser: FalCommandParser,
-    result_component: ResultComponent,
+    result_component: ResultsComponent,
 }
 
 impl FalApp {
@@ -37,7 +37,7 @@ impl FalApp {
         window.set_border(false);
 
         let search_component = SearchComponent::new(WINDOW_WIDTH, SEARCH_BAR_HEIGHT, send_channel);
-        let result_component = ResultComponent::new(
+        let result_component = ResultsComponent::new(
             0,
             SEARCH_BAR_HEIGHT,
             WINDOW_WIDTH,
@@ -108,7 +108,8 @@ impl FalApp {
                     Keybind::SelectionUp => self.result_component.scroll_up(),
                     Keybind::SelectionDown => self.result_component.scroll_down(),
                     Keybind::Execute => {
-                        // self.execute_selected_element();
+                        self.result_component
+                            .execute_selected(self.search_component.value().as_str());
                     }
                 },
                 Some(FalMessage::GlobalHotkeyTriggered(keybind)) => match keybind {
@@ -118,7 +119,7 @@ impl FalApp {
                 },
                 Some(FalMessage::TextInput(text)) => {
                     // println!("input {}", text);
-                    let results = self.command_parser.parse(text);
+                    let results = self.command_parser.parse(text.as_str());
                     self.result_component.update_results(results);
                     self.fit_to_elements();
                 }

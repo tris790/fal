@@ -2,26 +2,34 @@ use std::cmp::min;
 
 use fltk::{group::Pack, prelude::*};
 
-use crate::{components::list_element_component::SelectedState, fal_action::no_action};
+use crate::{
+    components::list_element_component::SelectedState,
+    fal_action::{FalAction, NoAction},
+};
 
 use super::list_element_component::ListElement;
 
-pub struct ResultComponent {
-    all_results: Vec<String>,
+pub struct ResultElement {
+    pub text: String,
+    pub action: Box<dyn FalAction>,
+}
+
+pub struct ResultsComponent {
+    all_results: Vec<ResultElement>,
     max_element_displayed: u32,
     displayed_elements: Vec<ListElement>,
     display_start_index: usize,
     selected_index: usize,
 }
 
-impl ResultComponent {
+impl ResultsComponent {
     pub fn new(
         x: i32,
         y: i32,
         width: i32,
         height: i32,
         max_element_displayed: u32,
-    ) -> ResultComponent {
+    ) -> ResultsComponent {
         let display_start_index = 0;
         let all_results = vec![];
         let selected_index = 0;
@@ -30,13 +38,13 @@ impl ResultComponent {
         let element_height = height / max_element_displayed as i32;
         let mut displayed_elements: Vec<ListElement> = (0..max_element_displayed)
             .into_iter()
-            .map(|_| ListElement::new("", width, element_height, &no_action))
+            .map(|_| ListElement::new("", width, element_height, Box::new(NoAction {})))
             .collect();
 
         pack.end();
         displayed_elements[0].set_selected_state(SelectedState::Selected);
 
-        ResultComponent {
+        ResultsComponent {
             display_start_index,
             all_results,
             max_element_displayed,
@@ -114,7 +122,7 @@ impl ResultComponent {
                 format!("[Result_Component] Cannot get displayed element[{}]", index).as_str(),
             );
 
-            display_element.update(&result.as_str(), &no_action, SelectedState::NotSelected);
+            display_element.update(result.text.as_str(), SelectedState::NotSelected);
         }
 
         // Select the current element
@@ -130,7 +138,7 @@ impl ResultComponent {
             )
             .set_selected_state(SelectedState::Selected);
     }
-    pub fn update_results(&mut self, new_results: Vec<String>) {
+    pub fn update_results(&mut self, new_results: Vec<ResultElement>) {
         self.all_results = new_results;
 
         if self.selected_index >= self.displayed_element_count() {
@@ -143,5 +151,16 @@ impl ResultComponent {
 
     pub fn displayed_element_count(&self) -> usize {
         min(self.all_results.len(), self.max_element_displayed as usize)
+    }
+
+    pub fn execute_selected(&mut self, data: &str) {
+        let element = self.all_results.get_mut(self.selected_index).expect(
+            format!(
+                "[Result Component] Cannot get result[{}]",
+                self.selected_index
+            )
+            .as_str(),
+        );
+        element.action.execute(data);
     }
 }

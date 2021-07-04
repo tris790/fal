@@ -1,23 +1,26 @@
-use crate::platform_api;
-use regex::Regex;
+use crate::{
+    components::result_component::ResultElement,
+    fal_action::{ExecuteAction, FalAction, NoAction},
+    platform_api,
+};
+use regex::{Regex, RegexBuilder};
 
-#[derive(Debug)]
 pub struct FalCommand {
     pub name: String,
     pub regex_pattern: Regex,
-    pub action: fn(String) -> Vec<String>,
+    pub on_command_matched: fn(&str) -> Vec<ResultElement>,
 }
 
 impl FalCommand {
     pub fn new(
         name: String,
         regex_pattern: Regex,
-        action: fn(String) -> Vec<String>,
+        on_command_matched: fn(&str) -> Vec<ResultElement>,
     ) -> FalCommand {
         FalCommand {
             name,
             regex_pattern,
-            action,
+            on_command_matched,
         }
     }
 }
@@ -29,39 +32,63 @@ pub struct FalCommandParser {
 impl FalCommandParser {
     pub fn new() -> FalCommandParser {
         let search_command = FalCommand::new(
-            String::from("search"),
+            String::from("Search"),
             Regex::new("^!").expect("invalid regex for search command"),
-            |input| match Regex::new(&input.as_str()[1..]) {
-                Ok(current_search_regex) => {
+            |input| match RegexBuilder::new(&input[1..])
+                .case_insensitive(true)
+                .build()
+            {
+                Ok(reg) => {
                     let programs = platform_api::get_programs();
-                    let output = programs
+                    let output: Vec<ResultElement> = programs
                         .into_iter()
-                        .filter(|x| current_search_regex.is_match(x))
+                        .filter(|x| reg.is_match(x.name.as_str()))
+                        .map(|program| ResultElement {
+                            text: program.name.to_owned(),
+                            action: Box::new(ExecuteAction {
+                                launch_cmd: program.launch_cmd.to_owned(),
+                            }),
+                        })
                         .collect();
-                    println!("programs {:?}", output);
                     output
                 }
                 Err(_) => vec![],
             },
         );
 
-        let calc_command = FalCommand::new(
-            String::from("calc"),
+        let calculation_command = FalCommand::new(
+            String::from("Calc"),
             Regex::new("^=").expect("invalid regex pattern for calc command"),
-            |input| vec![String::from("=54")],
+            |input| {
+                let expression = &input[1..];
+                vec![ResultElement {
+                    text: expression.to_owned(),
+                    action: Box::new(NoAction {}),
+                }]
+            },
         );
+        let commands = vec![search_command, calculation_command];
 
-        FalCommandParser {
-            commands: vec![search_command, calc_command],
-        }
+        FalCommandParser { commands }
     }
 
-    pub fn parse(&self, input: String) -> Vec<String> {
+    pub fn parse(&self, input: &str) -> Vec<ResultElement> {
         for command in &self.commands {
-            if command.regex_pattern.is_match(input.as_str()) {
+            if command.regex_pattern.is_match(input) {
                 println!("pattern matched {} {}", input, command.regex_pattern);
-                return (command.action)(input);
+                return (command.on_command_matched)(input);
             }
+        }
+
+        if input == "help" {
+            return self
+                .commands
+                .iter()
+                .map(|cmd| ResultElement {
+                    text: cmd.name.to_owned(),
+                    action: Box::new(NoAction {}),
+                })
+                .collect();
         }
         return vec![];
     }
