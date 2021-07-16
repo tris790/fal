@@ -10,6 +10,7 @@ use hotkey::{self, keys, modifiers};
 
 use crate::components::{result_component::ResultsComponent, search_component::SearchComponent};
 use crate::fal_command::FalCommandParser;
+use crate::fal_config::*;
 use crate::fal_message::*;
 use crate::platform_api;
 
@@ -29,14 +30,14 @@ pub struct FalApp {
 }
 
 impl FalApp {
-    pub fn new() -> FalApp {
+    pub fn new(config: FalConfig) -> FalApp {
         let max_result_displayed = 3;
         let window_width = 800;
 
         let app = app::App::default();
         let (send_channel, recv_channel) = app::channel::<FalMessage>();
         let (send_channel_thread, _) = app::channel::<FalMessage>();
-        let command_parser = FalCommandParser::new();
+        let command_parser = FalCommandParser::new(config.user_defined_programs);
 
         let mut window = Window::default();
         window.set_color(Color::from_hex(0x9CA3AF));

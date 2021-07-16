@@ -31,8 +31,7 @@ pub struct FalCommandParser {
 }
 
 impl FalCommandParser {
-    pub fn new() -> FalCommandParser {
-        let programs = platform_api::get_programs();
+    pub fn new(programs: Vec<Program>) -> FalCommandParser {
         let find_command = FalCommand::new(
             String::from("Find a program to launch"),
             Regex::new("").expect("invalid regex for search command"),

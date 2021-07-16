@@ -1,7 +1,8 @@
-use std::{borrow::BorrowMut, ffi::c_void, fs::read_dir};
+use serde::{Deserialize, Serialize};
+use std::ffi::c_void;
+
 const SUCCESS: LSTATUS = LSTATUS(0);
 
-use regex::{Regex, RegexBuilder};
 use walkdir::WalkDir;
 use windows_bindings::{
     Windows::Win32::Foundation::HWND,
@@ -59,45 +60,16 @@ pub fn hide_window(handle: *mut c_void) {
     unsafe { ShowWindow(HWND(handle as isize), SW_HIDE) };
 }
 
+// TODO: Move somewhere else
+#[derive(Serialize, Deserialize)]
 pub struct Program {
     pub name: String,
     pub launch_cmd: String,
 }
 
 pub fn get_programs() -> Vec<Program> {
-    let user_defined = vec![
-        Program {
-            name: String::from("VS Code"),
-            launch_cmd: String::from("code"),
-        },
-        Program {
-            name: String::from("Calculator"),
-            launch_cmd: String::from("calc"),
-        },
-        Program {
-            name: String::from("VLC"),
-            launch_cmd: String::from("vlc"),
-        },
-        Program {
-            name: String::from("Terminal"),
-            launch_cmd: String::from("wt"),
-        },
-        Program {
-            name: String::from("Discord"),
-            launch_cmd: String::from("discord"),
-        },
-        Program {
-            name: String::from("File Explorer"),
-            launch_cmd: String::from("explorer"),
-        },
-    ];
-
     println!("Fetching programs");
-    let mut programs = get_programs_from_shortcuts_folder();
-
-    user_defined
-        .into_iter()
-        .for_each(|program| programs.push(program));
+    let programs = get_programs_from_shortcuts_folder();
 
     programs
 }
@@ -118,7 +90,7 @@ fn get_programs_from_shortcuts_folder() -> Vec<Program> {
             .unwrap()
             .to_owned();
 
-        println!("program: {} - {}", name, path_str);
+        // println!("program: {} - {}", name, path_str);
         programs.push(Program {
             launch_cmd: path_str,
             name,
